@@ -1,0 +1,82 @@
+plugins {
+    id 'org.springframework.boot' version '2.2.1.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'c'
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+test {
+    systemProperty "java.path.library",
+            file("${buildDir}/libs/hello/shared").absolutePath
+}
+
+model {
+    platforms {
+        x64 {
+            architecture "x64"
+        }
+    }
+    toolChains {
+        gcc(Gcc) {
+            target("x64") {
+                cCompiler.executable = "C:/mingw_x86_64/mingw64/bin/gcc"
+            }
+        }
+    }
+    components {
+        hello(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir 'src/hello/c'
+                        include "**/*.c"
+                    }
+                }
+            }
+            buildTypes {
+                debug
+                release
+            }
+
+            binaries.all {
+                cCompiler.args "-m64"
+                cCompiler.args "-I${org.gradle.internal.jvm.Jvm.current().javaHome}/include"
+                cCompiler.args "-I${org.gradle.internal.jvm.Jvm.current().javaHome}/include/win32"
+            }
+        }
+    }
+}
+
+test.dependsOn 'helloSharedLibrary'
